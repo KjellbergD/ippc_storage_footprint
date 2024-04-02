@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "zconf.h": "c",
+        "zlib.h": "c",
+        "stdlib.h": "c",
+        "encode.h": "c",
+        "module_config.pb-c.h": "c",
+        "decode.h": "c"
+    }
+}
