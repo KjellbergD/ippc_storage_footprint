@@ -115,7 +115,7 @@ ParamInfo params[] = {
     {"pooling_type", 5, string_value: "max"},
 };
 
-void pipeline_protobuf_size(int test_amount) {
+void pipeline_protobuf_size(int test_amount, size_t *out_raw, size_t *out_zlib, size_t *out_brotli) {
     // Protocol Buffers serialization
     PipelineDefinition p = PIPELINE_DEFINITION__INIT;
     p.n_modules = test_amount;
@@ -137,6 +137,7 @@ void pipeline_protobuf_size(int test_amount) {
     }
     size_t pb_size = pipeline_definition__get_packed_size(&p);
     printf("[pipeline] Proto: %zu bytes\n", pb_size);
+    *out_raw = pb_size;
     uint8_t packed[pb_size];
     pipeline_definition__pack(&p, packed);
 
@@ -147,6 +148,7 @@ void pipeline_protobuf_size(int test_amount) {
         printf("Compression failed.\n");
     }
     printf("[pipeline] Proto + zlib: %lu bytes\n", compressed_size_proto);
+    *out_zlib = (size_t)compressed_size_proto;
     size_t encoded_buffer_size = 1000;
     uint8_t encoded_buffer[encoded_buffer_size];
     if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, pb_size, (const uint8_t *)packed, &encoded_buffer_size, encoded_buffer) == BROTLI_FALSE)
@@ -154,9 +156,10 @@ void pipeline_protobuf_size(int test_amount) {
         fprintf(stderr, "Brotli compression failed\n");
     }
     printf("[pipeline] Proto + brotli: %lu bytes\n\n", encoded_buffer_size);
+    *out_brotli = encoded_buffer_size;
 }
 
-void pipeline_json_size(int test_amount) {
+void pipeline_json_size(int test_amount, size_t *out_raw, size_t *out_zlib, size_t *out_brotli) {
     // JSON serialization
     cJSON *root = cJSON_CreateArray();  // Create a JSON array
     for (size_t i = 0; i < test_amount; i++) {
@@ -170,6 +173,7 @@ void pipeline_json_size(int test_amount) {
     size_t json_size = strlen(json_string);  // Calculate the size of the JSON string
     cJSON_Delete(root);  // Free memory allocated by cJSON
     printf("[pipeline] JSON: %zu bytes\n", json_size);
+    *out_raw = json_size;
 
     // Compress the JSON
     uLongf compressed_size_json = compressBound(json_size);  // Calculate the size of compressed data
@@ -178,6 +182,7 @@ void pipeline_json_size(int test_amount) {
         printf("Compression failed.\n");
     }
     printf("[pipeline] JSON + zlib: %lu bytes\n", compressed_size_json);
+    *out_zlib = (size_t)compressed_size_json;
     size_t encoded_buffer_size = 1000;
     uint8_t encoded_buffer[encoded_buffer_size];
     if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, json_size, (const uint8_t *)json_string, &encoded_buffer_size, encoded_buffer) == BROTLI_FALSE)
@@ -185,9 +190,10 @@ void pipeline_json_size(int test_amount) {
         fprintf(stderr, "Brotli compression failed\n");
     }
     printf("[pipeline] JSON + brotli: %lu bytes\n\n", encoded_buffer_size);
+    *out_brotli = encoded_buffer_size;
 }
 
-void pipeline_string_size(int test_amount) {
+void pipeline_string_size(int test_amount, size_t *out_raw, size_t *out_zlib, size_t *out_brotli) {
     // String format serialization
     char string_buffer[1024];
     size_t string_size = 0;
@@ -196,6 +202,7 @@ void pipeline_string_size(int test_amount) {
                                 "%d,%s,%d;", modules[i].order, modules[i].name, modules[i].param_id);
     }
     printf("[pipeline] String: %zu bytes\n", string_size);
+    *out_raw = string_size;
 
     // Compress the string
     uLongf compressed_size_string = compressBound(string_size);
@@ -204,6 +211,7 @@ void pipeline_string_size(int test_amount) {
         printf("Compression failed.\n");
     }
     printf("[pipeline] String + zlib: %lu bytes\n", compressed_size_string);
+    *out_zlib = (size_t)compressed_size_string;
     size_t encoded_buffer_size = 1000;
     uint8_t encoded_buffer[encoded_buffer_size];
     if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, string_size, (const uint8_t *)string_buffer, &encoded_buffer_size, encoded_buffer) == BROTLI_FALSE)
@@ -211,10 +219,11 @@ void pipeline_string_size(int test_amount) {
         fprintf(stderr, "Brotli compression failed\n");
     }
     printf("[pipeline] String + brotli: %lu bytes\n\n", encoded_buffer_size);
+    *out_brotli = encoded_buffer_size;
 }
 
 
-void module_protobuf_size(int test_amount) {
+void module_protobuf_size(int test_amount, size_t *out_raw, size_t *out_zlib, size_t *out_brotli) {
     // Protocol Buffers serialization
     ModuleConfig m = MODULE_CONFIG__INIT;
     m.n_parameters = test_amount;
@@ -252,6 +261,7 @@ void module_protobuf_size(int test_amount) {
     }
     size_t m_size = module_config__get_packed_size(&m);
     printf("[module] Proto: %zu bytes\n", m_size);
+    *out_raw = m_size;
     uint8_t packed[m_size];
     module_config__pack(&m, packed);
 
@@ -262,6 +272,7 @@ void module_protobuf_size(int test_amount) {
         printf("Compression failed.\n");
     }
     printf("[module] Proto + zlib: %lu bytes\n", compressed_size_proto);
+    *out_zlib = (size_t)compressed_size_proto;
     size_t encoded_buffer_size = 1000;
     uint8_t encoded_buffer[encoded_buffer_size];
     if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, m_size, (const uint8_t *)packed, &encoded_buffer_size, encoded_buffer) == BROTLI_FALSE)
@@ -269,9 +280,10 @@ void module_protobuf_size(int test_amount) {
         fprintf(stderr, "Brotli compression failed\n");
     }
     printf("[module] Proto + brotli: %lu bytes\n\n", encoded_buffer_size);
+    *out_brotli = encoded_buffer_size;
 }
 
-void module_json_size(int test_amount) {
+void module_json_size(int test_amount, size_t *out_raw, size_t *out_zlib, size_t *out_brotli) {
     // JSON serialization
     cJSON *root = cJSON_CreateArray();  // Create a JSON array
     for (size_t i = 0; i < test_amount; i++) {
@@ -299,6 +311,7 @@ void module_json_size(int test_amount) {
     size_t json_size = strlen(json_string);  // Calculate the size of the JSON string
     cJSON_Delete(root);  // Free memory allocated by cJSON
     printf("[module] JSON: %zu bytes\n", json_size);
+    *out_raw = json_size;
 
     // Compress the JSON
     uLongf compressed_size_json = compressBound(json_size);  // Calculate the size of compressed data
@@ -307,6 +320,7 @@ void module_json_size(int test_amount) {
         printf("Compression failed.\n");
     }
     printf("[module] JSON + zlib: %lu bytes\n", compressed_size_json);
+    *out_zlib = (size_t)compressed_size_json;
     size_t encoded_buffer_size = 1000;
     uint8_t encoded_buffer[encoded_buffer_size];
     if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, json_size, (const uint8_t *)json_string, &encoded_buffer_size, encoded_buffer) == BROTLI_FALSE)
@@ -314,9 +328,10 @@ void module_json_size(int test_amount) {
         fprintf(stderr, "Brotli compression failed\n");
     }
     printf("[module] JSON + brotli: %lu bytes\n\n", encoded_buffer_size);
+    *out_brotli = encoded_buffer_size;
 }
 
-void module_string_size(int test_amount) {
+void module_string_size(int test_amount, size_t *out_raw, size_t *out_zlib, size_t *out_brotli) {
     // String format serialization
     char string_buffer[1024];
     size_t string_size = 0;
@@ -344,6 +359,7 @@ void module_string_size(int test_amount) {
         }
     }
     printf("[module] String: %zu bytes\n", string_size);
+    *out_raw = string_size;
 
     // Compress the string
     uLongf compressed_size_string = compressBound(string_size);
@@ -352,6 +368,7 @@ void module_string_size(int test_amount) {
         printf("Compression failed.\n");
     }
     printf("[module] String + zlib: %lu bytes\n", compressed_size_string);
+    *out_zlib = (size_t)compressed_size_string;
     size_t encoded_buffer_size = 1000;
     uint8_t encoded_buffer[encoded_buffer_size];
     if (BrotliEncoderCompress(BROTLI_DEFAULT_QUALITY, BROTLI_DEFAULT_WINDOW, BROTLI_DEFAULT_MODE, string_size, (const uint8_t *)string_buffer, &encoded_buffer_size, encoded_buffer) == BROTLI_FALSE)
@@ -359,6 +376,7 @@ void module_string_size(int test_amount) {
         fprintf(stderr, "Brotli compression failed\n");
     }
     printf("[module] String + brotli: %lu bytes\n\n", encoded_buffer_size);
+    *out_brotli = encoded_buffer_size;
 }
 
 
@@ -369,18 +387,35 @@ int main(int argc, char *argv[]) {
     {
         test_amount = atoi(argv[1]);
     }
+
+    FILE *fp;
+    fp = fopen("sizes.txt", "w"); // Open file for writing
+    if (fp == NULL) {
+        perror("Error opening file");
+        return 1;
+    }
+
+    for (size_t i = 1; i <= test_amount; i++)
+    {
+        size_t s1, s2, s3, s4, s5, s6, s7, s8, s9;
+        pipeline_protobuf_size(i, &s1, &s2, &s3);
+
+        pipeline_json_size(i, &s4, &s5, &s6);
+
+        pipeline_string_size(i, &s7, &s8, &s9);
+
+        fprintf(fp, "%ld %zu %zu %zu %zu %zu %zu %zu %zu %zu\n", i, s1, s2, s3, s4, s5, s6, s7, s8, s9);
+
+        module_protobuf_size(i, &s1, &s2, &s3);
+
+        module_json_size(i, &s4, &s5, &s6);
+
+        module_string_size(i, &s7, &s8, &s9);
+        
+        fprintf(fp, "%ld %zu %zu %zu %zu %zu %zu %zu %zu %zu\n", i, s1, s2, s3, s4, s5, s6, s7, s8, s9);
+    }
+
+    fclose(fp); // Close the file
     
-    pipeline_protobuf_size(test_amount);
-
-    pipeline_json_size(test_amount);
-
-    pipeline_string_size(test_amount);
-
-    module_protobuf_size(test_amount);
-
-    module_json_size(test_amount);
-
-    module_string_size(test_amount);
-
     return 0;
 }

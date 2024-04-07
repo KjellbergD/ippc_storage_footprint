@@ -12,8 +12,10 @@ gcc -g -o main main.c pipeline_config.pb-c.c module_config.pb-c.c cJSON.c -Ilib/
 # Check if compilation was successful
 if [ $? -eq 0 ]; then
     echo "Compilation successful. Executing the program..."
-    # Run the compiled program
-    ./main
+    # Run the compiled program quietly
+    ./main > /dev/null 2>&1
+    echo "Program executed. Generating plots..."
+    python3 plotting.py
 else
     echo "Compilation failed."
 fi

@@ -12,7 +12,11 @@
                 "main.c",
                 "cJSON.c",
                 "pipeline_config.pb-c.c",
+                "module_config.pb-c.c",
+                "-Ilib/brotli/build/installed/include",
+                "-Llib/brotli/build/installed/lib",
                 "-lprotobuf-c",
+                "-lbrotlienc",
                 "-lz"  // Add any other necessary flags here
             ],
             "group": {
